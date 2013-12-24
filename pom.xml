@@ -41,8 +41,11 @@
         <!-- Nifty actually can not build with the 1.6 compiler because -->
         <!-- it dependends on airlift, which is 1.7 only.               -->
         <!-- <project.build.targetJdk>1.6</project.build.targetJdk>     -->
-
-        <dep.airlift.version>0.83</dep.airlift.version>
+        <project.build.targetJdk>1.6</project.build.targetJdk>
+        
+        <!-- changes airlift to 0.65(jdk1.6) -->
+        <!-- <dep.airlift.version>0.83</dep.airlift.version> -->
+        <dep.airlift.version>0.65</dep.airlift.version>
     </properties>
 
     <url>https://facebook.github.com/nifty</url>
@@ -189,6 +192,27 @@
                         <inceptionYear>${project.inceptionYear}</inceptionYear>
                         <year>2013</year>
                     </properties>
+                </configuration>
+            </plugin>
+            
+            <!-- CNJUN add -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>1.2</version>
+                <executions>
+                    <execution> 
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <rules>
+                        <AlwaysPass />
+                    </rules>
+                    <fail>false</fail>
                 </configuration>
             </plugin>
         </plugins>
