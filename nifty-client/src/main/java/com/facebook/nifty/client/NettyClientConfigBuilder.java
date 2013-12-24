@@ -16,24 +16,30 @@
 package com.facebook.nifty.client;
 
 import com.facebook.nifty.core.NettyConfigBuilderBase;
-import com.google.common.base.Preconditions;
+import com.facebook.nifty.core.NiftyTimer;
+import com.google.common.base.Strings;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
+
 import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.ThreadNameDeterminer;
+import org.jboss.netty.util.Timer;
 
 import java.lang.reflect.Proxy;
+import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 /*
  * Hooks for configuring various parts of Netty.
  */
-public class NettyClientConfigBuilder extends NettyConfigBuilderBase
+public class NettyClientConfigBuilder extends NettyConfigBuilderBase<NettyClientConfigBuilder>
 {
-    // The constants come directly from Netty but are private in Netty. We need these default
-    // values to call the NioClientSocketChannelFactory constructor with a custom timer.
-    private static final int DEFAULT_BOSS_THREAD_COUNT = 1;
-    private static final int DEFAULT_WORKER_THREAD_COUNT = Runtime.getRuntime().availableProcessors() * 2;
-    private int bossThreadCount = DEFAULT_BOSS_THREAD_COUNT;
-    private int workerThreadCount = DEFAULT_WORKER_THREAD_COUNT;
-    private String name = "";
+    private InetSocketAddress defaultSocksProxyAddress = null;
 
     private final NioSocketChannelConfig socketChannelConfig = (NioSocketChannelConfig) Proxy.newProxyInstance(
             getClass().getClassLoader(),
@@ -44,45 +50,74 @@ public class NettyClientConfigBuilder extends NettyConfigBuilderBase
     @Inject
     public NettyClientConfigBuilder()
     {
+        // Thrift turns TCP_NODELAY by default, and turning it off can have latency implications
+        // so let's turn it on by default as well. It can still be switched off by explicitly
+        // calling setTcpNodelay(false) after construction.
+        getSocketChannelConfig().setTcpNoDelay(true);
     }
 
+    /**
+     * Returns an implementation of {@link NioSocketChannelConfig} which will be applied to all
+     * {@link org.jboss.netty.channel.socket.nio.NioSocketChannel} instances created for client
+     * connections.
+     *
+     * @return A mutable {@link NioSocketChannelConfig}
+     */
     public NioSocketChannelConfig getSocketChannelConfig()
     {
         return socketChannelConfig;
     }
 
-    public NettyClientConfigBuilder setNiftyBossThreadCount(int bossThreadCount)
+    /**
+     * A default SOCKS proxy address for client connections. Defaults to {@code null} if not
+     * supplied.
+     *
+     * @param defaultSocksProxyAddress The address of the SOCKS proxy server
+     * @return This builder
+     */
+    public NettyClientConfigBuilder setDefaultSocksProxyAddress(InetSocketAddress defaultSocksProxyAddress)
     {
-        this.bossThreadCount = bossThreadCount;
+        this.defaultSocksProxyAddress = defaultSocksProxyAddress;
         return this;
     }
 
-    public int getNiftyBossThreadCount()
+    public NettyClientConfig build()
     {
-        return bossThreadCount;
+        Timer timer = getTimer();
+        ExecutorService bossExecutor = getBossExecutor();
+        int bossThreadCount = getBossThreadCount();
+        ExecutorService workerExecutor = getWorkerExecutor();
+        int workerThreadCount = getWorkerThreadCount();
+
+        return new NettyClientConfig(
+                getBootstrapOptions(),
+                defaultSocksProxyAddress,
+                timer != null ? timer : new NiftyTimer(threadNamePattern("")),
+                bossExecutor != null ? bossExecutor : buildDefaultBossExecutor(),
+                bossThreadCount,
+                workerExecutor != null ? workerExecutor : buildDefaultWorkerExecutor(),
+                workerThreadCount
+        );
     }
 
-    public NettyClientConfigBuilder setNiftyWorkerThreadCount(int workerThreadCount)
+    private ExecutorService buildDefaultBossExecutor()
     {
-        this.workerThreadCount = workerThreadCount;
-        return this;
+        return newCachedThreadPool(renamingDaemonThreadFactory(threadNamePattern("-boss-%s")));
     }
 
-    public int getNiftyWorkerThreadCount()
+    private ExecutorService buildDefaultWorkerExecutor()
     {
-        return workerThreadCount;
+        return newCachedThreadPool(renamingDaemonThreadFactory(threadNamePattern("-worker-%s")));
     }
 
-    public NettyClientConfigBuilder setNiftyName(String name)
+    private String threadNamePattern(String suffix)
     {
-        Preconditions.checkNotNull(name, "name is null");
-        this.name = name;
-        return this;
+        String niftyName = getNiftyName();
+        return "nifty-client" + (Strings.isNullOrEmpty(niftyName) ? "" : "-" + niftyName) + suffix;
     }
 
-    public String getNiftyName()
+    private ThreadFactory renamingDaemonThreadFactory(String nameFormat)
     {
-        return name;
+        return new ThreadFactoryBuilder().setNameFormat(nameFormat).setDaemon(true).build();
     }
-
 }

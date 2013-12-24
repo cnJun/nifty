@@ -15,19 +15,18 @@
  */
 package com.facebook.nifty.perf;
 
-import com.facebook.nifty.core.NettyConfigBuilder;
+import com.facebook.nifty.core.NettyServerConfig;
+import com.facebook.nifty.core.NettyServerConfigBuilder;
 import com.google.inject.Provider;
-import org.jboss.netty.channel.socket.ServerSocketChannelConfig;
-import org.jboss.netty.channel.socket.nio.NioSocketChannelConfig;
 
-public class LoadTesterNettyConfigProvider implements Provider<NettyConfigBuilder> {
+public class LoadTesterNettyConfigProvider implements Provider<NettyServerConfig> {
     public LoadTesterNettyConfigProvider() {
     }
 
     @Override
-    public NettyConfigBuilder get() {
-        NettyConfigBuilder configBuilder = new NettyConfigBuilder();
+    public NettyServerConfig get() {
+        NettyServerConfigBuilder configBuilder = new NettyServerConfigBuilder();
         configBuilder.getServerSocketChannelConfig().setBacklog(1024);
-        return configBuilder;
+        return configBuilder.build();
     }
 }

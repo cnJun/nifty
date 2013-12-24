@@ -16,6 +16,7 @@
 package com.facebook.nifty.client;
 
 import com.facebook.nifty.core.ThriftUnframedDecoder;
+import com.facebook.nifty.duplex.TDuplexProtocolFactory;
 import com.google.common.net.HostAndPort;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -26,28 +27,45 @@ import org.jboss.netty.util.Timer;
 import java.net.InetSocketAddress;
 
 public class UnframedClientConnector extends AbstractClientConnector<UnframedClientChannel> {
-    public UnframedClientConnector(InetSocketAddress address) {
-        super(address);
+    public UnframedClientConnector(InetSocketAddress address)
+    {
+        this(address, defaultProtocolFactory());
     }
 
-    public UnframedClientConnector(HostAndPort address) {
-        super(address);
+    public UnframedClientConnector(HostAndPort address)
+    {
+        this(address, defaultProtocolFactory());
+    }
+
+    public UnframedClientConnector(InetSocketAddress address, TDuplexProtocolFactory protocolFactory)
+    {
+        super(address, protocolFactory);
+    }
+
+    public UnframedClientConnector(HostAndPort address, TDuplexProtocolFactory protocolFactory)
+    {
+        super(toSocketAddress(address), protocolFactory);
     }
 
     @Override
-    public UnframedClientChannel newThriftClientChannel(Channel nettyChannel, Timer timer) {
-        UnframedClientChannel channel = new UnframedClientChannel(nettyChannel, timer);
-        channel.getNettyChannel().getPipeline().addLast("thriftHandler", channel);
+    public UnframedClientChannel newThriftClientChannel(Channel nettyChannel, Timer timer)
+    {
+        UnframedClientChannel channel = new UnframedClientChannel(nettyChannel, timer, getProtocolFactory());
+        ChannelPipeline cp = nettyChannel.getPipeline();
+        TimeoutHandler.addToPipeline(cp);
+        cp.addLast("thriftHandler", channel);
         return channel;
     }
 
     @Override
-    public ChannelPipelineFactory newChannelPipelineFactory(final int maxFrameSize) {
+    public ChannelPipelineFactory newChannelPipelineFactory(final int maxFrameSize)
+    {
         return new ChannelPipelineFactory() {
             @Override
             public ChannelPipeline getPipeline()
                     throws Exception {
                 ChannelPipeline cp = Channels.pipeline();
+                TimeoutHandler.addToPipeline(cp);
                 cp.addLast("thriftUnframedDecoder", new ThriftUnframedDecoder());
                 return cp;
             }

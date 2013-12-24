@@ -21,6 +21,8 @@ import com.facebook.nifty.client.NiftyClient;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.airlift.units.Duration;
+import org.jboss.netty.logging.InternalLoggerFactory;
+import org.jboss.netty.logging.Slf4JLoggerFactory;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
@@ -37,25 +39,27 @@ import static org.testng.Assert.fail;
 public class TestNiftyClientTimeout
 {
     private static final Duration TEST_CONNECT_TIMEOUT = new Duration(500, TimeUnit.MILLISECONDS);
+    private static final Duration TEST_RECEIVE_TIMEOUT = new Duration(500, TimeUnit.MILLISECONDS);
     private static final Duration TEST_READ_TIMEOUT = new Duration(500, TimeUnit.MILLISECONDS);
-    private static final Duration TEST_WRITE_TIMEOUT = new Duration(500, TimeUnit.MILLISECONDS);
+    private static final Duration TEST_SEND_TIMEOUT = new Duration(500, TimeUnit.MILLISECONDS);
     private static final int TEST_MAX_FRAME_SIZE = 16777216;
 
     @BeforeTest(alwaysRun = true)
     public void init() {
-      // must load DelegateSelectorProvider before entire test suite to
-      // properly wire up selector provider.
-      DelegateSelectorProvider.init();
+        // must load DelegateSelectorProvider before entire test suite to
+        // properly wire up selector provider.
+        DelegateSelectorProvider.init();
     }
 
     @BeforeMethod(alwaysRun = true)
     public void setup() {
-      DelegateSelectorProvider.makeDeaf();
+        InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
+        DelegateSelectorProvider.makeDeaf();
     }
 
     @AfterMethod(alwaysRun = true)
     public void tearDown() {
-      DelegateSelectorProvider.makeUndeaf();
+        DelegateSelectorProvider.makeUndeaf();
     }
 
     @Test(timeOut = 2000)
@@ -68,7 +72,7 @@ public class TestNiftyClientTimeout
                 client.connectSync(new InetSocketAddress(port),
                                    TEST_CONNECT_TIMEOUT,
                                    TEST_READ_TIMEOUT,
-                                   TEST_WRITE_TIMEOUT,
+                                   TEST_SEND_TIMEOUT,
                                    TEST_MAX_FRAME_SIZE);
         }
         catch (Throwable throwable) {
@@ -97,8 +101,9 @@ public class TestNiftyClientTimeout
             ListenableFuture<FramedClientChannel> future =
                             client.connectAsync(new FramedClientConnector(new InetSocketAddress(port)),
                                                 TEST_CONNECT_TIMEOUT,
+                                                TEST_RECEIVE_TIMEOUT,
                                                 TEST_READ_TIMEOUT,
-                                                TEST_WRITE_TIMEOUT,
+                                                TEST_SEND_TIMEOUT,
                                                 TEST_MAX_FRAME_SIZE);
             // Wait while NiftyClient attempts to connect the channel
             future.get();
@@ -121,7 +126,7 @@ public class TestNiftyClientTimeout
     private boolean isTimeoutException(Throwable throwable) {
         Throwable rootCause = Throwables.getRootCause(throwable);
         // Look for a java.net.ConnectException, with the message "connection timed out"
-        return (rootCause instanceof ConnectException &&
-                rootCause.getMessage().compareTo("connection timed out") == 0);
+        return rootCause instanceof ConnectException &&
+                rootCause.getMessage().startsWith("connection timed out");
     }
 }

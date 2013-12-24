@@ -15,14 +15,13 @@
  */
 package com.facebook.nifty.client;
 
+import com.facebook.nifty.duplex.TDuplexProtocolFactory;
 import io.airlift.units.Duration;
 import org.apache.thrift.TException;
-import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.util.Timer;
+
+import javax.annotation.Nullable;
 
 public interface NiftyClientChannel {
     /**
@@ -45,7 +44,7 @@ public interface NiftyClientChannel {
      *
      * @param sendTimeout
      */
-    void setSendTimeout(Duration sendTimeout);
+    void setSendTimeout(@Nullable Duration sendTimeout);
 
     /**
      * Returns the timeout most recently set by
@@ -61,7 +60,7 @@ public interface NiftyClientChannel {
      *
      * @param receiveTimeout
      */
-    void setReceiveTimeout(Duration receiveTimeout);
+    void setReceiveTimeout(@Nullable Duration receiveTimeout);
 
     /**
      * Returns the timeout most recently set by
@@ -70,6 +69,21 @@ public interface NiftyClientChannel {
      * @return
      */
     Duration getReceiveTimeout();
+
+    /**
+     * Sets a timeout used to limit the time that the client waits for data to be sent by the server.
+     *
+     * @param readTimeout
+     */
+    void setReadTimeout(@Nullable Duration readTimeout);
+
+    /**
+     * Returns the timeout most recently set by
+     * {@link NiftyClientChannel#setReadTimeout(io.airlift.units.Duration)}
+     *
+     * @return
+     */
+    Duration getReadTimeout();
 
     /**
      * Closes the channel
@@ -101,6 +115,8 @@ public interface NiftyClientChannel {
     void executeInIoThread(Runnable runnable);
 
     Channel getNettyChannel();
+
+    TDuplexProtocolFactory getProtocolFactory();
 
     public interface Listener {
         public abstract void onRequestSent();

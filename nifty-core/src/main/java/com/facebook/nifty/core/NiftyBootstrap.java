@@ -15,18 +15,15 @@
  */
 package com.facebook.nifty.core;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timer;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * A lifecycle object that manages starting up and shutting down multiple core channels.
@@ -34,10 +31,10 @@ import java.util.concurrent.Executors;
 public class NiftyBootstrap
 {
     private final ChannelGroup allChannels;
-    private ArrayList<NettyServerTransport> transports;
+    private final NettyServerConfig nettyServerConfig;
+    private final Map<ThriftServerDef, NettyServerTransport> transports;
     private ExecutorService bossExecutor;
     private ExecutorService workerExecutor;
-    private final Timer timer;
     private NioServerSocketChannelFactory serverChannelFactory;
 
     /**
@@ -46,28 +43,27 @@ public class NiftyBootstrap
     @Inject
     public NiftyBootstrap(
             Set<ThriftServerDef> thriftServerDefs,
-            NettyConfigBuilder configBuilder,
+            NettyServerConfig nettyServerConfig,
             ChannelGroup allChannels)
     {
         this.allChannels = allChannels;
-        this.transports = new ArrayList<>();
-        this.timer = new HashedWheelTimer();
+        ImmutableMap.Builder<ThriftServerDef, NettyServerTransport> builder = new ImmutableMap.Builder<>();
+        this.nettyServerConfig = nettyServerConfig;
         for (ThriftServerDef thriftServerDef : thriftServerDefs) {
-            transports.add(new NettyServerTransport(thriftServerDef,
-                                                    configBuilder,
-                                                    allChannels,
-                                                    timer));
+            builder.put(thriftServerDef, new NettyServerTransport(thriftServerDef,
+                    nettyServerConfig,
+                    allChannels));
         }
-
+        transports = builder.build();
     }
 
     @PostConstruct
     public void start()
     {
-        bossExecutor = Executors.newCachedThreadPool();
-        workerExecutor = Executors.newCachedThreadPool();
+        bossExecutor = nettyServerConfig.getBossExecutor();
+        workerExecutor = nettyServerConfig.getWorkerExecutor();
         serverChannelFactory = new NioServerSocketChannelFactory(bossExecutor, workerExecutor);
-        for (NettyServerTransport transport : transports) {
+        for (NettyServerTransport transport : transports.values()) {
             transport.start(serverChannelFactory);
         }
     }
@@ -75,7 +71,7 @@ public class NiftyBootstrap
     @PreDestroy
     public void stop()
     {
-        for (NettyServerTransport transport : transports) {
+        for (NettyServerTransport transport : transports.values()) {
             try {
                 transport.stop();
             }
@@ -84,7 +80,15 @@ public class NiftyBootstrap
             }
         }
 
-        ShutdownUtil.shutdownChannelFactory(serverChannelFactory, bossExecutor,
-                                            workerExecutor, allChannels);
+        ShutdownUtil.shutdownChannelFactory(serverChannelFactory, bossExecutor, workerExecutor, allChannels);
+    }
+
+    public Map<ThriftServerDef, NiftyMetrics> getNiftyMetrics()
+    {
+        ImmutableMap.Builder<ThriftServerDef, NiftyMetrics> builder = new ImmutableMap.Builder<>();
+        for (Map.Entry<ThriftServerDef, NettyServerTransport> entry : transports.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue().getMetrics());
+        }
+        return builder.build();
     }
 }
