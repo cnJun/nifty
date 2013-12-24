@@ -34,7 +34,7 @@ public abstract class NettyConfigBuilderBase<T extends NettyConfigBuilderBase<T>
     private static final int DEFAULT_BOSS_THREAD_COUNT = 1;
     private static final int DEFAULT_WORKER_THREAD_COUNT = Runtime.getRuntime().availableProcessors() * 2;
 
-    private final Map<String, Object> options = new HashMap<>();
+    private final Map<String, Object> options = new HashMap<String, Object>();
     private String niftyName;
     private int bossThreadCount = DEFAULT_BOSS_THREAD_COUNT;
     private int workerThreadCount = DEFAULT_WORKER_THREAD_COUNT;

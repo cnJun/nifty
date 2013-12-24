@@ -64,7 +64,7 @@ public abstract class AbstractClientChannel extends SimpleChannelHandler impleme
     // Timeout for not receiving any data from the server
     private Duration readTimeout = null;
 
-    private final Map<Integer, Request> requestMap = new HashMap<>();
+    private final Map<Integer, Request> requestMap = new HashMap<Integer, Request>();
     private volatile TException channelError;
     private final Timer timer;
     private final TDuplexProtocolFactory protocolFactory;
@@ -328,7 +328,7 @@ public abstract class AbstractClientChannel extends SimpleChannelHandler impleme
 
         cancelAllTimeouts();
 
-        Collection<Request> requests = new ArrayList<>();
+        Collection<Request> requests = new ArrayList<Request>();
         requests.addAll(requestMap.values());
         requestMap.clear();
         for (Request request : requests) {

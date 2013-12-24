@@ -148,7 +148,10 @@ public class DefaultThriftFrameDecoder extends ThriftFrameDecoder
             inputProtocol.readMessageEnd();
 
             messageLength = decodeAttemptTransport.getReadByteCount() - initialReadBytes;
-        } catch (TTransportException | IndexOutOfBoundsException e) {
+        } catch (TTransportException e) {
+            // No complete message was decoded: ran out of bytes
+            return null;
+        } catch (IndexOutOfBoundsException e) {
             // No complete message was decoded: ran out of bytes
             return null;
         } finally {

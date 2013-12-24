@@ -51,7 +51,7 @@ public class NiftyDispatcher extends SimpleChannelUpstreamHandler
     private final NiftyProcessorFactory processorFactory;
     private final Executor exe;
     private final int queuedResponseLimit;
-    private final Map<Integer, ThriftMessage> responseMap = new HashMap<>();
+    private final Map<Integer, ThriftMessage> responseMap = new HashMap<Integer, ThriftMessage>();
     private final AtomicInteger dispatcherSequenceId = new AtomicInteger(0);
     private final AtomicInteger lastResponseWrittenId = new AtomicInteger(0);
     private final TDuplexProtocolFactory duplexProtocolFactory;

@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class RequestContexts
 {
-    private static ThreadLocal<RequestContext> threadLocalContext = new ThreadLocal<>();
+    private static ThreadLocal<RequestContext> threadLocalContext = new ThreadLocal<RequestContext>();
 
     private RequestContexts()
     {

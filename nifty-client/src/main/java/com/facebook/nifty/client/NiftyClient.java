@@ -182,7 +182,7 @@ public class NiftyClient implements Closeable
                 }
             }
         });
-        return new TNiftyFuture<>(clientChannelConnector,
+        return new TNiftyFuture<T>(clientChannelConnector,
                                   receiveTimeout,
                                   sendTimeout,
                                   nettyChannelFuture);

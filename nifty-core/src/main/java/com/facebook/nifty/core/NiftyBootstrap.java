@@ -47,7 +47,7 @@ public class NiftyBootstrap
             ChannelGroup allChannels)
     {
         this.allChannels = allChannels;
-        ImmutableMap.Builder<ThriftServerDef, NettyServerTransport> builder = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<ThriftServerDef, NettyServerTransport> builder = new ImmutableMap.Builder<ThriftServerDef, NettyServerTransport>();
         this.nettyServerConfig = nettyServerConfig;
         for (ThriftServerDef thriftServerDef : thriftServerDefs) {
             builder.put(thriftServerDef, new NettyServerTransport(thriftServerDef,
@@ -85,7 +85,7 @@ public class NiftyBootstrap
 
     public Map<ThriftServerDef, NiftyMetrics> getNiftyMetrics()
     {
-        ImmutableMap.Builder<ThriftServerDef, NiftyMetrics> builder = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<ThriftServerDef, NiftyMetrics> builder = new ImmutableMap.Builder<ThriftServerDef, NiftyMetrics>();
         for (Map.Entry<ThriftServerDef, NettyServerTransport> entry : transports.entrySet()) {
             builder.put(entry.getKey(), entry.getValue().getMetrics());
         }
