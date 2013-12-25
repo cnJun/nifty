@@ -33,6 +33,7 @@
     <modules>
         <module>nifty-core</module>
         <module>nifty-client</module>
+        <module>airlift-units</module>
         <module>nifty-examples</module>
         <module>nifty-load-tester</module>
     </modules>
@@ -46,6 +47,8 @@
         <!-- changes airlift to 0.65(jdk1.6) -->
         <!-- <dep.airlift.version>0.83</dep.airlift.version> -->
         <dep.airlift.version>0.65</dep.airlift.version>
+        
+        <fb.check.skip-license>true</fb.check.skip-license>
     </properties>
 
     <url>https://facebook.github.com/nifty</url>
@@ -91,6 +94,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>airlift-units</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.facebook.nifty</groupId>
                 <artifactId>nifty-examples</artifactId>
                 <version>${project.version}</version>
@@ -124,13 +132,13 @@
                 <artifactId>httpcore</artifactId>
                 <version>4.2.4</version>
             </dependency>
-
+<!--
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>units</artifactId>
                 <version>${dep.airlift.version}</version>
             </dependency>
-
+-->
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bootstrap</artifactId>

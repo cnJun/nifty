@@ -90,7 +90,8 @@
 
         <dependency>
             <groupId>io.airlift</groupId>
-            <artifactId>units</artifactId>
+            <!--<artifactId>units</artifactId>-->
+            <artifactId>airlift-units</artifactId>
             <scope>test</scope>
         </dependency>
 

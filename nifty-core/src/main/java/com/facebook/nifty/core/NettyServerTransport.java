@@ -107,14 +107,12 @@ public class NettyServerTransport implements ExternalResourceReleasable
                                                                                  inputProtocolFactory));
                 if (def.getClientIdleTimeout() != null) {
                     // Add handlers to detect idle client connections and disconnect them
-                    //TODO: compile error.
-                    /*
                     cp.addLast("idleTimeoutHandler", new IdleStateHandler(nettyServerConfig.getTimer(),
-                                                                          def.getClientIdleTimeout().toMillis(),
+                                                                          (long) def.getClientIdleTimeout().toMillis(),
                                                                           NO_WRITER_IDLE_TIMEOUT,
                                                                           NO_ALL_IDLE_TIMEOUT,
                                                                           TimeUnit.MILLISECONDS));
-                    */
+                    
                     cp.addLast("idleDisconnectHandler", new IdleDisconnectHandler());
                 }
 

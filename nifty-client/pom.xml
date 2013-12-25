@@ -61,9 +61,16 @@
             <artifactId>annotations</artifactId>
         </dependency>
 
+        <!--
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>units</artifactId>
+        </dependency>
+        -->
+        
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>airlift-units</artifactId>
         </dependency>
 
         <dependency>
